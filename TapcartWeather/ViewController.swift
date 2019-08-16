@@ -43,28 +43,30 @@ extension ViewController {
 }
 
 extension ViewController: WeatherDelegate {
-    func weatherReceived(weather: WeatherResult) {
-        locationName.text = weather.name
-        let weatherType = weather.weather.first?.main ?? ""
-        let temp = weather.main.temp - 273.15
-        weatherTypeLabel.text = weatherType
-        weatherTypeIcon.image = weatherTypeIcon.image?.image(forWeather: weatherType)
-        currentTemp.text = "\(temp.formatAsDegree)c"
+    func weatherReceived(weather: Weather) {
+        locationName.text = weather.locationName
+        currentTemp.text = "\(weather.temperature.formatAsDegree)c"
+        weatherTypeLabel.text = weather.imageName
+        weatherTypeIcon.image = weatherTypeIcon.image?.image(forWeather: weather.imageName)
+
         _ = [locationName, weatherTypeLabel, weatherTypeIcon, currentTemp].map { $0?.isHidden = false }
     }
 }
 
 extension ViewController: ForecastDelegate {
     func forecastReceived(forecasts: [Forecast]) {
-        //self.forecasts = forecasts
+        self.forecasts = forecasts
         forecastView.isHidden = false
         forecastView.reloadData()
     }
-
 }
 
 extension ViewController: APIDelegate {
     func errorReceived(_ error: Any?) {
+        guard let error = error else {
+            presentAlert("Unknown Error")
+            return
+        }
         let errorString = String(describing: error)
         presentAlert(errorString)
     }

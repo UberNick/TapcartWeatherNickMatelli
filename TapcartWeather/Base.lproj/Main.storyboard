@@ -31,7 +31,6 @@
                                         <textInputTraits key="textInputTraits"/>
                                         <connections>
                                             <action selector="doSearchWithSender:" destination="BYZ-38-t0r" eventType="primaryActionTriggered" id="D6C-rT-uaU"/>
-                                            <action selector="doSearchWithSender:" destination="BYZ-38-t0r" eventType="editingDidEnd" id="UaX-9z-HvB"/>
                                         </connections>
                                     </textField>
                                 </subviews>

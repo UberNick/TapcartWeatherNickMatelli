@@ -13,7 +13,7 @@ protocol APIDelegate {
 }
 
 protocol WeatherDelegate: APIDelegate {
-    func weatherReceived(weather: WeatherResult)
+    func weatherReceived(weather: Weather)
 }
 
 protocol ForecastDelegate: APIDelegate {
@@ -25,21 +25,34 @@ struct API {
     static let key  = "bce770eb36db43822638d40e9733ffe3"
     static let imperical = "&units=Imperial"
 
+    static var decoder: JSONDecoder = {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return decoder
+    }()
+
     static func getWeather(_ delegate: WeatherDelegate, searchString: String) {
         let url = getUrl(delegate, path: "weather", query: searchString)
         executeCall(delegate, url: url) { data in
-            guard let weatherResult = try? JSONDecoder().decode(WeatherResult.self, from: data) else { return }
-            delegate.weatherReceived(weather: weatherResult)
+            guard let weatherResult = try? decoder.decode(WeatherResult.self, from: data) else { return }
+            let weather = Weather(weatherResult: weatherResult)
+            delegate.weatherReceived(weather: weather)
         }
     }
 
     static func getForecast(_ delegate: ForecastDelegate, searchString: String) {
         let url = getUrl(delegate, path: "forecast", query: searchString)
         executeCall(delegate, url: url) { data in
-            guard let forecasts = try? JSONDecoder().decode([Forecast].self, from: data) else {
-                delegate.forecastReceived(forecasts: []) //TODO remove once Forecast encoding is working
-                return
+            var forecastResult: ForecastResult?
+            do {
+                forecastResult = try decoder.decode(ForecastResult.self, from: data)
+            } catch {
+                delegate.errorReceived(error)
             }
+            guard let groupedForecastResult = forecastResult?.groupedByDay() else { return }
+            var forecastResultDays = groupedForecastResult.compactMap { ForecastResult.rollUpDays($0.value) }
+            forecastResultDays = forecastResultDays.sorted { $0.dtTxt < $1.dtTxt }
+            let forecasts = forecastResultDays.map { Forecast(forecastDayResult: $0) }
             delegate.forecastReceived(forecasts: forecasts)
         }
     }
